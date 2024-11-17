@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results</title>
+    <style>
+        /* General Body Styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #D0A9F5; /* Dark Lavender background */
+            color: #F0F8FF; /* Light text color for contrast */
+            text-align: center;
+            line-height: 1.6;
+            box-sizing: border-box;
+        }
+
+        /* Header Styling */
+        h1 {
+            font-size: 3em;
+            margin: 30px;
+            color: #45a049; /* Medium Sea Green for fresh contrast */
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.3); /* Subtle shadow */
+        }
+
+        /* Controls Container */
+        #controls {
+            margin: 30px 0;
+        }
+
+        #calendar, #refreshBtn {
+            font-size: 1.2em;
+            padding: 12px 20px;
+            border: 2px solid #3CB371; /* Green border */
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+            background-color: #3CB371; /* Green background for the button */
+            color: white;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Soft shadow for the button */
+        }
+
+        /* Hover effects for buttons */
+        #calendar:hover, #refreshBtn:hover {
+            background-color: #45a049; /* Darker green on hover */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* Strong shadow effect on hover */
+            transform: translateY(-3px); /* Slight lift effect */
+        }
+
+        /* Table Styling */
+        table {
+            margin: 40px auto;
+            border-collapse: collapse;
+            width: 90%;
+            background-color: #FFFFFF; /* White background for table */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2); /* Hard shadow for the table */
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            border: 1px solid #3CB371; /* Green border for table */
+            padding: 12px;
+            text-align: center;
+            font-size: 1.1em;
+        }
+
+        th {
+            background-color: #3CB371; /* Green header */
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #F1F1F1; /* Soft Lavender background for even rows */
+        }
+
+        tr:hover {
+            background-color: #D3FFD3; /* Light Green hover effect */
+            transform: translateY(-2px); /* Lift effect on hover */
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3); /* Strong shadow on hover */
+        }
+
+        /* Empty Table Message */
+        #resultsTable {
+            font-size: 1.1em;
+        }
+
+        /* Additional Styling for No Results Found */
+        #resultsTable td {
+            color: #3CB371; /* Highlight "No results" in green */
+        }
+
+        /* Responsive Design for Small Screens */
+        @media (max-width: 768px) {
+            body {
+                font-size: 14px;
+            }
+
+            h1 {
+                font-size: 2.5em;
+            }
+
+            table {
+                width: 95%;
+            }
+
+            #calendar, #refreshBtn {
+                font-size: 1em;
+                padding: 8px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>TEJAS</h1>
+    <div id="controls">
+        <input type="date" id="calendar" />
+        <button id="refreshBtn" onclick="fetchResults()">Refresh</button>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Time</th>
+                <th>Coupon Name</th>
+                <th>Number</th>
+            </tr>
+        </thead>
+        <tbody id="resultsTable">
+            <!-- Results will be displayed here -->
+        </tbody>
+    </table>
+
+    <script>
+        async function fetchResults() {
+            let date = document.getElementById('calendar').value;
+
+            // Automatically set today's date if no date is selected
+            if (!date) {
+                const today = new Date();
+                date = today.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+            }
+
+            try {
+                const response = await fetch(`http://localhost:3000/getResults?date=${date}`);
+                const results = await response.json();
+
+                const table = document.getElementById('resultsTable');
+                table.innerHTML = ''; // Clear previous results
+
+                if (results.length === 0) {
+                    table.innerHTML = '<tr><td colspan="3">No results found</td></tr>';
+                } else {
+                    results.forEach(result => {
+                        const row = `<tr>
+                            <td>${result.time}</td>
+                            <td>${result.coupon_name}</td>
+                            <td>${result.number}</td>
+                        </tr>`;
+                        table.innerHTML += row;
+                    });
+                }
+            } catch (error) {
+                console.error('Error fetching results:', error);
+                alert('Failed to fetch results. Please try again.');
+            }
+        }
+
+        // Fetch today's results when the page loads
+        document.addEventListener('DOMContentLoaded', fetchResults);
+    </script>
+</body>
+</html>
