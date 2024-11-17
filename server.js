@@ -1,5 +1,5 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const path = require('path');
 const bodyParser = require('body-parser');
 
@@ -13,16 +13,10 @@ app.use(bodyParser.json());
 app.use(express.static('public'));
 
 // Connect to SQLite database
-const db = new sqlite3.Database('./results.db', (err) => {
-    if (err) {
-        console.error('Error connecting to the database:', err);
-    } else {
-        console.log('Connected to SQLite database.');
-    }
-});
+const db = new Database('./results.db', { verbose: console.log });
 
 // Create the 'results' table if it doesn't exist
-db.run(`
+db.prepare(`
     CREATE TABLE IF NOT EXISTS results (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         date TEXT,
@@ -30,7 +24,7 @@ db.run(`
         coupon_name TEXT,
         number TEXT
     )
-`);
+`).run();
 
 // Route for user (index.html)
 app.get('/user', (req, res) => {
@@ -45,18 +39,19 @@ app.get('/admin', (req, res) => {
 // Fetch results (optional: filter by date)
 app.get('/getResults', (req, res) => {
     const { date } = req.query;
-    const query = date
-        ? `SELECT id, date, time, coupon_name, number FROM results WHERE date = ? ORDER BY time ASC`
-        : `SELECT id, date, time, coupon_name, number FROM results ORDER BY date DESC, time ASC`;
 
-    db.all(query, date ? [date] : [], (err, rows) => {
-        if (err) {
-            console.error('Error fetching results:', err);
-            res.status(500).send('Error fetching results');
-        } else {
-            res.json(rows);
-        }
-    });
+    try {
+        const query = date
+            ? `SELECT id, date, time, coupon_name, number FROM results WHERE date = ? ORDER BY time ASC`
+            : `SELECT id, date, time, coupon_name, number FROM results ORDER BY date DESC, time ASC`;
+
+        const stmt = db.prepare(query);
+        const rows = date ? stmt.all(date) : stmt.all();
+        res.json(rows);
+    } catch (err) {
+        console.error('Error fetching results:', err);
+        res.status(500).send('Error fetching results');
+    }
 });
 
 // Upload a result
@@ -67,30 +62,35 @@ app.post('/uploadResult', (req, res) => {
         return res.status(400).send('All fields are required!');
     }
 
-    const query = `INSERT INTO results (date, time, coupon_name, number) VALUES (?, ?, ?, ?)`;
-    db.run(query, [date, time, coupon_name, number], function (err) {
-        if (err) {
-            console.error('Error uploading result:', err);
-            res.status(500).send('Error uploading result');
-        } else {
-            res.send('Result uploaded successfully!');
-        }
-    });
+    try {
+        const query = `INSERT INTO results (date, time, coupon_name, number) VALUES (?, ?, ?, ?)`;
+        const stmt = db.prepare(query);
+        stmt.run(date, time, coupon_name, number);
+        res.send('Result uploaded successfully!');
+    } catch (err) {
+        console.error('Error uploading result:', err);
+        res.status(500).send('Error uploading result');
+    }
 });
 
 // Delete a result by ID
 app.delete('/deleteResult/:id', (req, res) => {
     const { id } = req.params;
-    const query = `DELETE FROM results WHERE id = ?`;
 
-    db.run(query, [id], function (err) {
-        if (err) {
-            console.error('Error deleting result:', err);
-            res.status(500).send('Error deleting result');
-        } else {
+    try {
+        const query = `DELETE FROM results WHERE id = ?`;
+        const stmt = db.prepare(query);
+        const changes = stmt.run(id).changes;
+
+        if (changes > 0) {
             res.send('Result deleted successfully!');
+        } else {
+            res.status(404).send('Result not found');
         }
-    });
+    } catch (err) {
+        console.error('Error deleting result:', err);
+        res.status(500).send('Error deleting result');
+    }
 });
 
 // Handle 404 for unknown routes
