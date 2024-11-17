@@ -253,7 +253,8 @@
                 number: formData.get('number'),
             };
 
-            const response = await fetch('http://localhost:3000/uploadResult', {
+            const response = await fetch('https://coup-h8i0wv06z-aditya-kishores-projects-9f9aface.vercel.app/uploadResult
+', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
@@ -271,7 +272,7 @@
         async function fetchResults() {
             const selectedDate = document.getElementById('calendar').value;
             const queryParam = selectedDate ? `?date=${selectedDate}` : '';
-            const response = await fetch(`http://localhost:3000/getResults${queryParam}`);
+            const response = await fetch(`https://coup-h8i0wv06z-aditya-kishores-projects-9f9aface.vercel.app/getResults${queryParam}`);
             const results = await response.json();
 
             const tableBody = document.getElementById('resultsTable').getElementsByTagName('tbody')[0];
@@ -292,7 +293,7 @@
 
         async function deleteResult(id) {
             if (confirm('Are you sure you want to delete this result?')) {
-                const response = await fetch(`http://localhost:3000/deleteResult/${id}`, {
+                const response = await fetch(`https://coup-h8i0wv06z-aditya-kishores-projects-9f9aface.vercel.app/deleteResult/${id}`, {
                     method: 'DELETE',
                 });
 
