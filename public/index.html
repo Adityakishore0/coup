@@ -147,7 +147,8 @@
             }
 
             try {
-                const response = await fetch(`http://localhost:3000/getResults?date=${date}`);
+                const response = await fetch(`https://coup-h8i0wv06z-aditya-kishores-projects-9f9aface.vercel.app/getResults?date=${date}
+`);
                 const results = await response.json();
 
                 const table = document.getElementById('resultsTable');
